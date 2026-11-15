@@ -6,6 +6,21 @@ jobs:
     runs-on: ubuntu-24.04-arm
     container: ubuntu:26.04        # change to match your proot Ubuntu
     steps:
+      - name: SPIRV dev packages
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          for p in libspirv-tools-dev spirv-tools-dev libspirv-tools-1 spirv-headers libspirv-cross-c-shared-dev; do
+            if apt-cache show "$p" >/dev/null 2>&1; then
+              echo "installing $p"
+              apt-get install -y "$p"
+            fi
+          done
+          pkg-config --modversion SPIRV-Tools || {
+            echo "SPIRV-Tools.pc not found. Candidates:"
+            find / -name 'SPIRV-Tools*.pc' 2>/dev/null
+            apt-cache search spirv | sort
+            exit 1
+          }
       - name: Install build deps
         run: |
           export DEBIAN_FRONTEND=noninteractive
