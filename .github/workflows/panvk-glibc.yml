@@ -39,13 +39,26 @@ jobs:
       - name: Build
         run: cmake --build build --parallel 2
 
+      - name: Inspect build outputs
+        run: |
+          find build -type f \( \
+          -name '*.so' -o \
+          -name '*.so.*' -o \
+          -name '*.a' \
+          \) -print
+
       - name: Package
         run: |
-          mkdir -p artifact/lib
-          find build -name 'libSPIRV-Tools.so*' \
-            -exec cp -a {} artifact/lib/ \;
-          tar -czf spirv-tools-arm64.tar.gz -C artifact .
+         mkdir -p artifact/lib
 
+         find build -type f -name 'libSPIRV-Tools.so*' \
+         -exec cp -av {} artifact/lib/ \;
+
+         ls -lah artifact/lib
+
+         test -n "$(find artifact/lib -name 'libSPIRV-Tools.so*' -print -quit)"
+
+         tar -czf spirv-tools-arm64.tar.gz -C artifact .
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
