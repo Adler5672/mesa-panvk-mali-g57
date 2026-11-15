@@ -1,36 +1,48 @@
-name: build-panvk-g57
-on: workflow_dispatch
+name: Build SPIRV-Tools ARM64
+
+on:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-24.04-arm
-    container: ubuntu:26.04
-    steps:
-      - name: Install build deps
-        run: |
-          export DEBIAN_FRONTEND=noninteractive
-          sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
-          apt-get update
-          apt-get install -y build-essential git ca-certificates ninja-build python3-packaging
-          apt-get build-dep -y mesa
 
-      - name: Clone source
-        run: git clone --depth 1 https://github.com/apexspan-svg/mesa-panvk-mali-g57.git src
+    steps:
+      - name: Checkout SPIRV-Tools
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/SPIRV-Tools
+          ref: main
+          submodules: recursive
+          path: SPIRV-Tools
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y cmake ninja-build g++
+
+      - name: Configure
+        run: |
+          cmake -S SPIRV-Tools -B build -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DSPIRV_SKIP_TESTS=ON \
+            -DSPIRV_SKIP_EXECUTABLES=ON \
+            -DSPIRV_WERROR=OFF \
+            -DBUILD_SHARED_LIBS=ON
 
       - name: Build
-        working-directory: src
-        run: |
-          meson setup build \
-            -Dbuildtype=release -Dprefix=/opt/panvk \
-            -Dpanvk-use-kbase=true -Dvulkan-drivers=panfrost -Dgallium-drivers= \
-            -Dplatforms=x11 -Dpanfrost-kmds=kbase,panthor -Dbuild-tests=false
-          ninja -C build
-          DESTDIR=$PWD/out ninja -C build install
+        run: cmake --build build --parallel 2
 
       - name: Package
-        run: tar -czf panvk-g57-glibc.tar.gz -C src/out .
+        run: |
+          mkdir -p artifact/lib
+          find build -name 'libSPIRV-Tools.so*' \
+            -exec cp -a {} artifact/lib/ \;
+          tar -czf spirv-tools-arm64.tar.gz -C artifact .
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload
+        uses: actions/upload-artifact@v4
         with:
-          name: panvk-g57-glibc
-          path: panvk-g57-glibc.tar.gz
+          name: spirv-tools-arm64
+          path: spirv-tools-arm64.tar.gz
