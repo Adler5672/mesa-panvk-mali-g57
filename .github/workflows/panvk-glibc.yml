@@ -51,12 +51,9 @@ jobs:
         run: |
          mkdir -p artifact/lib
 
-         find build -type f -name 'libSPIRV-Tools.so*' \
-         -exec cp -av {} artifact/lib/ \;
+         cp -av build/source/libSPIRV-Tools-shared.so artifact/lib/
 
          ls -lah artifact/lib
-
-         test -n "$(find artifact/lib -name 'libSPIRV-Tools.so*' -print -quit)"
 
          tar -czf spirv-tools-arm64.tar.gz -C artifact .
       - name: Upload
