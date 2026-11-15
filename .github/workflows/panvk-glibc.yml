@@ -19,8 +19,13 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y cmake ninja-build g++
-
+          sudo apt install -y cmake ninja-build   g++
+      - name: Checkout SPIRV-Headers
+        uses: actions/checkout@v4
+        with:
+          repository: KhronosGroup/SPIRV-Headers
+          ref: main
+          path: SPIRV-Tools/external/spirv-headers
       - name: Configure
         run: |
           cmake -S SPIRV-Tools -B build -G Ninja \
